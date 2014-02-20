@@ -6,10 +6,12 @@ class SudokuGame
   def initialize(input=nil)
     @tiles = []
 
-    input = input.split(" ").map{|x| x.split("")}
+    if input
+      input = input.split(" ").map{|x| x.split("")}
 
-    build_tiles(input)
-    pretty_print
+      build_tiles(input)
+      pretty_print
+    end
   end
 
   def solve
@@ -58,7 +60,13 @@ class SudokuGame
     tile = tile_to_try
 
     tile.candidates.map do |num|
-      game = SudokuGame.new(self.output)
+      game = SudokuGame.new
+      game.tiles = (0..8).map do |i|
+                     (0..8).map do |j|
+                       original_tile = self.tiles[i][j]
+                       Tile.new(game, i+1, j+1, original_tile.value, original_tile.given)
+                     end
+                   end
 
       game.tiles[tile.x-1][tile.y-1].set_value(num)
       game
