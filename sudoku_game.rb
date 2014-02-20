@@ -15,37 +15,42 @@ class SudokuGame
   end
 
   def solve
-    p not_solved?: not_solved?
-    while not_solved?
+    total_value_before = total_value
+    total_value_after = nil
+    while not_solved? #&& total_value_before != total_value_after
       total_value_before = total_value
 
       @tiles.flatten.each do |tile|
+        # p tile
         unless tile.value
           tile.update_candidates
           tile.set_value
         end
+        # p tile
       end
-
-      pretty_print
 
       total_value_after = total_value
-
-      p after: total_value_after, before: total_value_before
-
-      if total_value_after == total_value_before
-        p games_to_try: games_to_try.count
-        games_to_try.each(&:pretty_print)
-        continue if games_to_try.count == 0
-        games_to_try.each do |game|
-          puts "TRY A subgame #{@@time += 1}"
-          game.pretty_print
-          # sleep 1
-          game.solve
-        end
-      end
     end
 
-    # pretty_print
+    pretty_print
+    # if !not_solved?
+    #   p "solved!!!"
+    #   pretty_print
+    #   return
+    # elsif total_value_after == total_value_before
+    #   p "tried setting value, now trying different games"
+    #   p tile_to_try
+    #   p games_to_try: games_to_try.count
+
+    #   games_to_try.each(&:pretty_print)
+
+    #   games_to_try.each do |game|
+    #     puts "TRY A subgame #{@@time += 1}"
+    #     game.pretty_print
+    #     # sleep 1
+    #     game.solve
+    #   end
+    # end
   end
 
   def not_solved?
@@ -53,20 +58,14 @@ class SudokuGame
   end
 
   def tile_to_try
-    @tiles.flatten.select{|x| x.value.nil? }.sort{|x, y| x.candidates.length <=> y.candidates.length }.first
+    @tiles_to_try ||= @tiles.flatten.select{|x| x.value.nil? }.sort{|x, y| x.candidates.length <=> y.candidates.length }.first
   end
 
   def games_to_try
     tile = tile_to_try
 
-    tile.candidates.map do |num|
-      game = SudokuGame.new
-      game.tiles = (0..8).map do |i|
-                     (0..8).map do |j|
-                       original_tile = self.tiles[i][j]
-                       Tile.new(game, i+1, j+1, original_tile.value, original_tile.given)
-                     end
-                   end
+    @games_to_try ||= tile.candidates.map do |num|
+      game = Marshal.load(Marshal.dump(self))
 
       game.tiles[tile.x-1][tile.y-1].set_value(num)
       game
@@ -119,9 +118,6 @@ class SudokuGame
       puts "-"*22 if i % 3 == 2
     end
     puts total_value
-    # @tiles.flatten.sort{|x, y| x.candidates.length <=> y.candidates.length }.each do |tile|
-    #    p x: tile.x, y: tile.y, v: tile.value, c: tile.candidates if tile.candidates.count > 0 && tile.candidates.count <=2
-    # end
     puts
   end
 end
@@ -154,9 +150,9 @@ class Tile
       if candidates.count == 1
         @value = candidates.first
         @candidates = []
-      elsif derived_number
-        @value = derived_number
-        @candidates = []
+      # elsif derived_number
+      #   @value = derived_number
+      #   @candidates = []
       end
     end
   end
@@ -187,7 +183,7 @@ class Tile
   end
 
   def x_occupied
-    @game.tiles[x].map(&:value)
+    @game.tiles[x-1].map(&:value)
   end
 
   def y_occupied
@@ -229,6 +225,6 @@ class Tile
 end
 
 #game = SudokuGame.new("586374912 137952864 249816573 872543196 693781245 415629738 954237681 721468359 368195427")
+game = SudokuGame.new("..6.7.9.. 1..9....4 ...8..5.3 87.5...9. ..37.1... 4...2.7.8 .5.2..6.. 7....8... 3..1..4..")
 #game = SudokuGame.new("..6.7.9.. 1..9....4 ...8..5.3 87.5...9. ..37.1... 4...2.7.8 .5.2..6.. 7....8... 3..1..4..")
-game = SudokuGame.new("..6.7.9.. 1..9....4 ...8..5.3 .7.5...9. ..37.1... 4...2.7.8 .5.2..6.. 7....8... 3..1..4..")
 game.solve
